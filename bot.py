@@ -14,12 +14,25 @@ def handle_message(message):
         api = Text2ImageAPI('https://api-key.fusionbrain.ai/', 'Api_token', 'secret_token')
 
 
-        text = message.text.split()
-        width = int(text[-2])
-        height = int(text[-1])
+        # Разделите сообщение по запятой
+        parts = message.text.split(',')
+        prompt = parts[0].strip()  # Текст запроса до первой запятой
+        size = parts[1].strip().split()  # Размер изображения (x, y)
+        width = int(size[0])
+        height = int(size[1])
+
+        # Проверка длины запроса
+        if len(prompt.split()) > 10:
+            bot.reply_to(message, "Запрос слишком длинный. Используйте не более 10 слов.")
+            return
+
+        generating_message = bot.send_message(message.chat.id, "Генерирую изображение...")
         
         # Сгенерируйте изображение
         api.text_to_image(message.text, api.get_model(), 'landscape.png', width=width, height=height)
+
+        # Удалите сообщение о генерации
+        bot.delete_message(message.chat.id, generating_message.message_id)
 
         # Отправьте изображение пользователю
         with open('landscape.png', 'rb') as image_file:
@@ -28,6 +41,6 @@ def handle_message(message):
     except Exception as e:
         print(f"Error: {e}")
         bot.reply_to(message, "Произошла ошибка. Пожалуйста, попробуйте снова.")
-      
+
 if __name__ == "__main__":
     bot.polling(none_stop=True)
